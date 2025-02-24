@@ -1,12 +1,15 @@
 import * as THREE from "three";
 import { OrbitControls } from "jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "jsm/loaders/GLTFLoader.js";
+import { UnrealBloomPass } from "post/UnrealBloomPass.js";
 
 const w = window.innerWidth;
 const h = window.innerHeight;
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(w, h);
+renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
-
+ 
 const fov = 75;
 const aspect = w / h;
 const near = 0.1;
@@ -15,18 +18,55 @@ const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 camera.position.z = 2;
 const scene = new THREE.Scene();
 
+// Orbit
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.1;
 
+// Light
+const directionalLight = new THREE.DirectionalLight( 0xffffff, 5);
+directionalLight.castShadow = true;
+scene.add( directionalLight );
+directionalLight.position.set( 10, 10, -10);
 
-const geo = new THREE.IcosahedronGeometry(1, 1);
+//const hemilight = new THREE.HemisphereLight(0xffffff, 0x000000);
+//scene.add(hemilight)
+
+// 3D GLTF Objects
+const loader = new GLTFLoader().setPath( 'public/' );
+loader.load( 'ARCA.gltf', function ( gltf ) {
+scene.add( gltf.scene );
+const logo = gltf.scene
+logo.position.set( 0, 0, -0.4)
+} );
+
+const loader1 = new GLTFLoader().setPath( 'public/' );
+loader1.load( 'ARCA_white.gltf', function ( gltf ) {
+scene.add( gltf.scene );
+const logo_white = gltf.scene
+logo_white.position.set( 0, 0, -0.41)
+} );
+
+const loader2 = new GLTFLoader().setPath( 'public/' );
+loader2.load( 'wall.gltf', function ( gltf ) {
+scene.add( gltf.scene );
+const wall = gltf.scene
+wall.receiveShadow = true;
+wall.castShadow = true; 
+wall.position.set( 0, 0, -0.5)
+} );
+
+// 3D spheres
+const geo = new THREE.IcosahedronGeometry(0.5, 1);
 const mat = new THREE.MeshStandardMaterial({
     color: 0xccff,
     flatShading: true
 });
 const mesh = new THREE.Mesh(geo, mat);
 scene.add(mesh);
+mesh.castShadow = true; 
+mesh.receiveShadow = true;
+mesh.position.set( 0, -1, 0);
 
 const wirefatMat = new THREE.MeshBasicMaterial({
     color: 0xffffff,
@@ -46,8 +86,7 @@ const wiremesh = new THREE.Mesh(geo, wireMat);
 wiremesh.scale.setScalar(1.001);
 mesh.add(wiremesh);
 
-const hemilight = new THREE.HemisphereLight(0xffffff, 0x000000);
-scene.add(hemilight)
+// update
 function animate(t = 0) {
     requestAnimationFrame(animate);
     mesh.rotation.y = t * 0.0001;
@@ -55,3 +94,10 @@ function animate(t = 0) {
     controls.update();
 }
 animate();
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    render.setSize( window.innerWidth, window.innerHeight );
+
+}
