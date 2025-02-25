@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "jsm/loaders/GLTFLoader.js";
-import { UnrealBloomPass } from "post/UnrealBloomPass.js";
+//import { UnrealBloomPass } from "post/UnrealBloomPass.js";
 
 const w = window.innerWidth;
 const h = window.innerHeight;
@@ -24,20 +24,34 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.1;
 
 // Light
-const directionalLight = new THREE.DirectionalLight( 0xffffff, 5);
+const directionalLight = new THREE.DirectionalLight( 0xffffff, 1);
 directionalLight.castShadow = true;
 scene.add( directionalLight );
-directionalLight.position.set( 10, 10, -10);
+directionalLight.position.set( 10, 10, 10);
 
-//const hemilight = new THREE.HemisphereLight(0xffffff, 0x000000);
-//scene.add(hemilight)
+const hemilight = new THREE.HemisphereLight(0xffffff, 0x7c7c7c);
+scene.add(hemilight)
+
+
+// Videotexture pannello
+const video = document.getElementById( 'video' );
+const texture = new THREE.VideoTexture( video );
+texture.colorSpace = THREE.SRGBColorSpace;
+const geometry = new THREE.PlaneGeometry( 16, 9 );
+geometry.scale( 0.5, 0.5, 0.5 );
+const material = new THREE.MeshBasicMaterial( { map: texture } );
+const streamprojector = new THREE.Mesh( geometry, material );
+streamprojector.lookAt( camera.position );
+scene.add( streamprojector );
+streamprojector.position.set(0, 0, -5);
 
 // 3D GLTF Objects
 const loader = new GLTFLoader().setPath( 'public/' );
-loader.load( 'ARCA.gltf', function ( gltf ) {
+loader.load( 'A01.gltf', function ( gltf ) {
 scene.add( gltf.scene );
 const logo = gltf.scene
-logo.position.set( 0, 0, -0.4)
+logo.position.set( 0, 0, -0.4);
+logo.scale.set(3, 3, 3)
 } );
 
 const loader1 = new GLTFLoader().setPath( 'public/' );
@@ -86,6 +100,28 @@ const wiremesh = new THREE.Mesh(geo, wireMat);
 wiremesh.scale.setScalar(1.001);
 mesh.add(wiremesh);
 
+if ( navigator.mediaDevices && navigator.mediaDevices.getUserMedia ) {
+
+    const constraints = { video: { width: 1280, height: 720, facingMode: 'user' } };
+
+    navigator.mediaDevices.getUserMedia( constraints ).then( function ( stream ) {
+
+        // apply the stream to the video element used in the texture
+
+        video.srcObject = stream;
+        video.play();
+
+    } ).catch( function ( error ) {
+
+        console.error( 'Unable to access the camera/webcam.', error );
+
+    } );
+
+} else {
+
+    console.error( 'MediaDevices interface not available.' );
+}
+
 // update
 function animate(t = 0) {
     requestAnimationFrame(animate);
@@ -101,3 +137,5 @@ function onWindowResize() {
     render.setSize( window.innerWidth, window.innerHeight );
 
 }
+
+
